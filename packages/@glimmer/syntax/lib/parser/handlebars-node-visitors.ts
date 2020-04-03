@@ -57,7 +57,7 @@ export abstract class HandlebarsNodeVisitors extends Parser {
     }
 
     if(this.tokenizer['state'].startsWith('attributeValue')) {
-      block.type = 'MustacheStatement';
+      block.type = 'BlockInAttributeStatement';
       this.MustacheStatement(<any>block);
       return;
     }
@@ -115,6 +115,11 @@ export abstract class HandlebarsNodeVisitors extends Parser {
         }
       );
       mustache = b.mustache(path, params, hash, !escaped, loc);
+      if(rawMustache.type === 'BlockInAttributeStatement') {
+        (<any>mustache).custom = 'BlockInAttributeStatement';
+        (<any>mustache).program = (<any>rawMustache).program;
+
+      }
     }
 
     switch (tokenizer.state) {
