@@ -56,6 +56,12 @@ export abstract class HandlebarsNodeVisitors extends Parser {
       return;
     }
 
+    if(this.tokenizer['state'].startsWith('attributeValue')) {
+      block.type = 'MustacheStatement';
+      this.MustacheStatement(block);
+      return;
+    }
+
     if (
       this.tokenizer['state'] !== 'comment' &&
       this.tokenizer['state'] !== 'data' &&
@@ -81,7 +87,7 @@ export abstract class HandlebarsNodeVisitors extends Parser {
     appendChild(parentProgram, node);
   }
 
-  MustacheStatement(rawMustache: HandlebarsAST.MustacheStatement) {
+  MustacheStatement(rawMustache: any) {
     let { tokenizer } = this;
 
     if (tokenizer.state === 'comment') {
