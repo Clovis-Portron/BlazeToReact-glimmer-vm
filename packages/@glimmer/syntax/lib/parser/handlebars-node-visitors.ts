@@ -58,7 +58,7 @@ export abstract class HandlebarsNodeVisitors extends Parser {
 
     if(this.tokenizer['state'].startsWith('attributeValue')) {
       block.type = 'MustacheStatement';
-      this.MustacheStatement(block);
+      this.MustacheStatement(<any>block);
       return;
     }
 
@@ -87,7 +87,7 @@ export abstract class HandlebarsNodeVisitors extends Parser {
     appendChild(parentProgram, node);
   }
 
-  MustacheStatement(rawMustache: any) {
+  MustacheStatement(rawMustache: HandlebarsAST.MustacheStatement) {
     let { tokenizer } = this;
 
     if (tokenizer.state === 'comment') {
@@ -210,14 +210,16 @@ export abstract class HandlebarsNodeVisitors extends Parser {
   }
 
   PartialStatement(partial: HandlebarsAST.PartialStatement) {
-    let { loc } = partial;
+    let parentProgram = this.currentElement();
+    appendChild(parentProgram, (<any>partial));
+    /*let { loc } = partial;
 
     throw new SyntaxError(
       `Handlebars partials are not supported: "${this.sourceForNode(partial, partial.name)}" at L${
         loc.start.line
       }:C${loc.start.column}`,
       partial.loc
-    );
+    );*/
   }
 
   PartialBlockStatement(partialBlock: HandlebarsAST.PartialBlockStatement) {
