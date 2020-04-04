@@ -118,7 +118,7 @@ export abstract class HandlebarsNodeVisitors extends Parser {
       if(rawMustache.type === 'BlockInAttributeStatement') {
         (<any>mustache).custom = 'BlockInAttributeStatement';
         (<any>mustache).program = (<any>rawMustache).program;
-
+        (<any>mustache).inverse = (<any>rawMustache).inverse;
       }
     }
 
