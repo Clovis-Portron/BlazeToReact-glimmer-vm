@@ -21,6 +21,7 @@ const visitorKeys = {
   ConcatStatement: tuple('parts'),
   SubExpression: tuple('path', 'params', 'hash'),
   PathExpression: tuple(),
+  FunctionExpression: tuple('parts'),
 
   StringLiteral: tuple(),
   BooleanLiteral: tuple(),
@@ -30,6 +31,7 @@ const visitorKeys = {
 
   Hash: tuple('pairs'),
   HashPair: tuple('value'),
+
 };
 
 export default visitorKeys;
