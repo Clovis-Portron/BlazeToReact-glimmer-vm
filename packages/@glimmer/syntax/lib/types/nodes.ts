@@ -60,6 +60,7 @@ export interface BlockStatement extends BaseNode {
   hash: Hash;
   program: Program;
   inverse?: Option<Program>;
+  escaped: boolean;
 }
 
 export interface ElementModifierStatement extends BaseNode {
@@ -102,7 +103,7 @@ export interface ElementNode extends BaseNode {
 export interface AttrNode extends BaseNode {
   type: 'AttrNode';
   name: string;
-  value: TextNode | MustacheStatement | ConcatStatement;
+  value: TextNode | MustacheStatement | ConcatStatement | BlockStatement;
 }
 
 export interface TextNode extends BaseNode {
@@ -112,7 +113,7 @@ export interface TextNode extends BaseNode {
 
 export interface ConcatStatement extends BaseNode {
   type: 'ConcatStatement';
-  parts: (TextNode | MustacheStatement)[];
+  parts: (TextNode | MustacheStatement | BlockStatement)[];
 }
 
 export type Expression = SubExpression | PathExpression | Literal;

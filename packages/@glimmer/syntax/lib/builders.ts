@@ -43,6 +43,7 @@ function buildBlock(
     program: program || null,
     inverse: inverse || null,
     loc: buildLoc(loc || null),
+    escaped: false
   };
 }
 
@@ -99,7 +100,7 @@ function buildMustacheComment(
 }
 
 function buildConcat(
-  parts: (AST.TextNode | AST.MustacheStatement)[],
+  parts: (AST.TextNode | AST.MustacheStatement | AST.BlockStatement)[],
   loc?: AST.SourceLocation
 ): AST.ConcatStatement {
   return {

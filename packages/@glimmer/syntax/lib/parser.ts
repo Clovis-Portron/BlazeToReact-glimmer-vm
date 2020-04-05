@@ -25,7 +25,7 @@ export interface Tag<T extends 'StartTag' | 'EndTag'> {
 
 export interface Attribute {
   name: string;
-  parts: (AST.MustacheStatement | AST.TextNode)[];
+  parts: (AST.MustacheStatement | AST.TextNode | AST.BlockStatement)[];
   isQuoted: boolean;
   isDynamic: boolean;
   start: AST.Position;
@@ -103,6 +103,11 @@ export abstract class Parser {
   acceptNode(node: HandlebarsAST.Program): Program;
   acceptNode<U extends AST.Node>(node: HandlebarsAST.Node): U;
   acceptNode(node: HandlebarsAST.Node): any {
+    //console.log('Accepting Node '+node.type);
+    //console.log(node);
+    //console.log('Ctx: ');
+    //console.log(this.currentElement());
+    //console.trace('Trace: ');
     return this[node.type](node);
   }
 

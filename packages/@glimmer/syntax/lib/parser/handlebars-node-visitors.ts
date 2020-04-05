@@ -7,6 +7,7 @@ import SyntaxError from '../errors/syntax-error';
 import { Option } from '@glimmer/util';
 import { Recast } from '@glimmer/interfaces';
 import { TokenizerState } from 'simple-html-tokenizer';
+import {TokenizerEventHandlers} from './tokenizer-event-handlers';
 
 export abstract class HandlebarsNodeVisitors extends Parser {
   abstract appendToCommentData(s: string): void;
@@ -33,6 +34,8 @@ export abstract class HandlebarsNodeVisitors extends Parser {
     }
 
     for (i = 0; i < l; i++) {
+      // console.log('TokenizerStat');
+      // console.log(this.tokenizer.state);
       this.acceptNode(program.body[i]);
     }
 
@@ -56,13 +59,8 @@ export abstract class HandlebarsNodeVisitors extends Parser {
       return;
     }
 
-    if(this.tokenizer['state'].startsWith('attributeValue')) {
-      block.type = 'BlockInAttributeStatement';
-      this.MustacheStatement(<any>block);
-      return;
-    }
-
     if (
+      this.tokenizer['state'].startsWith('attributeValue') == false &&
       this.tokenizer['state'] !== 'comment' &&
       this.tokenizer['state'] !== 'data' &&
       this.tokenizer['state'] !== 'beforeData'
@@ -72,19 +70,49 @@ export abstract class HandlebarsNodeVisitors extends Parser {
         block.loc
       );
     }
-
     let { path, params, hash } = acceptCallNodes(this, block);
-    let program = this.Program(block.program);
-    let inverse = block.inverse ? this.Program(block.inverse) : null;
 
     if (path.original === 'in-element') {
       hash = addInElementHash(this.cursor(), hash, block.loc);
     }
+    if(this.tokenizer['state'].startsWith('attributeValue') == false) {
+      const program = this.Program(block.program);
+      const inverse = block.inverse ? this.Program(block.inverse) : null;
+      let node = b.block(path, params, hash, program, inverse, block.loc);
+      let parentProgram = this.currentElement();
+      appendChild(parentProgram, node);
+    } else {
+      // Il est nécessaire de tricher un peu: Handlebars ne supporte pas les BlockNodes dans 
+      // les attributs. Or Spacebars semble bien le supporter. 
 
-    let node = b.block(path, params, hash, program, inverse, block.loc);
+      const currentStartTag = this.currentStartTag;
+      // console.log('Keeping old startTag');
+      // console.log(currentStartTag);
+      const state = this.tokenizer.state;
+      this.tokenizer.transitionTo(TokenizerState.beforeData);
+      const program = this.Program(block.program);
+      this.tokenizer.transitionTo(TokenizerState.beforeData);
+      const inverse = block.inverse ? this.Program(block.inverse) : null;
+      this.tokenizer.transitionTo(state);
+      // console.log('Restoring old StartTag');
+      // console.log(currentStartTag);
+      this.currentNode = currentStartTag;
 
-    let parentProgram = this.currentElement();
-    appendChild(parentProgram, node);
+      let node = b.block(path, params, hash, program, inverse, block.loc);
+      switch (this.tokenizer.state) {
+        // Attribute values
+        case TokenizerState.beforeAttributeValue:
+          this.beginAttributeValue(false);
+          appendDynamicAttributeValuePart(this.currentAttribute!, node);
+          this.tokenizer.transitionTo(TokenizerState.attributeValueUnquoted);
+          break;
+        case TokenizerState.attributeValueDoubleQuoted:
+        case TokenizerState.attributeValueSingleQuoted:
+        case TokenizerState.attributeValueUnquoted:
+          appendDynamicAttributeValuePart(this.currentAttribute!, node);
+          break;
+      }
+    }
   }
 
   MustacheStatement(rawMustache: HandlebarsAST.MustacheStatement) {
@@ -115,11 +143,11 @@ export abstract class HandlebarsNodeVisitors extends Parser {
         }
       );
       mustache = b.mustache(path, params, hash, !escaped, loc);
-      if(rawMustache.type === 'BlockInAttributeStatement') {
+      /*if(rawMustache.type === 'BlockInAttributeStatement') {
         (<any>mustache).custom = 'BlockInAttributeStatement';
         (<any>mustache).program = (<any>rawMustache).program;
         (<any>mustache).inverse = (<any>rawMustache).inverse;
-      }
+      }*/
     }
 
     switch (tokenizer.state) {
@@ -172,7 +200,6 @@ export abstract class HandlebarsNodeVisitors extends Parser {
 
   ContentStatement(content: HandlebarsAST.ContentStatement) {
     updateTokenizerLocation(this.tokenizer, content);
-
     this.tokenizer.tokenizePart(content.value);
     this.tokenizer.flushData();
   }
@@ -470,7 +497,7 @@ function addInElementHash(cursor: string, hash: AST.Hash, loc: AST.SourceLocatio
   return hash;
 }
 
-function appendDynamicAttributeValuePart(attribute: Attribute, part: AST.MustacheStatement) {
+function appendDynamicAttributeValuePart(attribute: Attribute, part: AST.MustacheStatement | AST.BlockStatement) {
   attribute.isDynamic = true;
   attribute.parts.push(part);
 }

@@ -163,7 +163,7 @@ export class TokenizerEventHandlers extends HandlebarsNodeVisitors {
         tag.loc
       );
     }
-
+    // console.log('Begin Attribute');
     this.currentAttribute = {
       name: '',
       parts: [],
@@ -173,6 +173,8 @@ export class TokenizerEventHandlers extends HandlebarsNodeVisitors {
       valueStartLine: 0,
       valueStartColumn: 0,
     };
+    // console.log(this.currentAttribute);
+    // console.trace('Trace: ');
   }
 
   appendToAttributeName(char: string) {
@@ -216,6 +218,9 @@ export class TokenizerEventHandlers extends HandlebarsNodeVisitors {
   }
 
   finishAttributeValue() {
+    // console.log('finishAttributeValue');
+    // console.log(this.currentAttr.parts);
+    // console.trace('Trace: ');
     let { name, parts, isQuoted, isDynamic, valueStartLine, valueStartColumn } = this.currentAttr;
     let value = assembleAttributeValue(parts, isQuoted, isDynamic, this.tokenizer.line);
     value.loc = b.loc(valueStartLine, valueStartColumn, this.tokenizer.line, this.tokenizer.column);
@@ -228,6 +233,12 @@ export class TokenizerEventHandlers extends HandlebarsNodeVisitors {
     );
 
     let attribute = b.attr(name, value, loc);
+    // console.log('Pushing attribute');
+    // console.log(attribute);
+    // console.log('CurrentStartTag');
+    // console.log(this.currentStartTag);
+    // console.log('Attributes');
+    // console.log(this.currentStartTag.attributes);
 
     this.currentStartTag.attributes.push(attribute);
   }
@@ -241,7 +252,7 @@ export class TokenizerEventHandlers extends HandlebarsNodeVisitors {
 }
 
 function assembleAttributeValue(
-  parts: (AST.MustacheStatement | AST.TextNode)[],
+  parts: (AST.MustacheStatement | AST.TextNode | AST.BlockStatement)[],
   isQuoted: boolean,
   isDynamic: boolean,
   line: number
@@ -271,11 +282,11 @@ function assembleAttributeValue(
   }
 }
 
-function assembleConcatenatedValue(parts: (AST.MustacheStatement | AST.TextNode)[]) {
+function assembleConcatenatedValue(parts: (AST.MustacheStatement | AST.TextNode | AST.BlockStatement)[]) {
   for (let i = 0; i < parts.length; i++) {
     let part: AST.BaseNode = parts[i];
 
-    if (part.type !== 'MustacheStatement' && part.type !== 'TextNode') {
+    if (part.type !== 'MustacheStatement' && part.type !== 'TextNode' && part.type !== 'BlockStatement') {
       throw new SyntaxError(
         'Unsupported node in quoted attribute value: ' + part['type'],
         part.loc
